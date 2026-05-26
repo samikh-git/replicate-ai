@@ -1,6 +1,6 @@
 # ReplicateAI example packs
 
-Each subdirectory is a self-contained **paper + dataset** bundle for `replicate-ai`.
+Each subdirectory is a self-contained paper + dataset bundle for `replicate-ai`.
 
 ## Layout
 
@@ -50,4 +50,4 @@ Use `--skip-pdf-extract` on reruns after the first successful PDF preflight.
 | [autor_dorn_hanson](autor_dorn_hanson/) | [AER (DOI)](https://doi.org/10.1257/aer.103.6.2121) · [AEA page](https://www.aeaweb.org/articles?id=10.1257/aer.103.6.2121) | [Dorn PDF](http://www.ddorn.net/papers/Autor-Dorn-Hanson-ChinaSyndrome.pdf) |
 | [acemoglu_johnson_robinson](acemoglu_johnson_robinson/) | [AER (DOI)](https://doi.org/10.1257/aer.91.5.1369) · [AEA page](https://www.aeaweb.org/articles?id=10.1257/aer.91.5.1369) | — (use journal / institutional access) |
 
-**Related (data only):** LaLonde (1986), [AER (DOI)](https://doi.org/10.1257/aer.76.4.604) — underlying NSW experiment for `dehejia_wahba`.
+Related (data only): LaLonde (1986), [AER (DOI)](https://doi.org/10.1257/aer.76.4.604) — underlying NSW experiment for `dehejia_wahba`.

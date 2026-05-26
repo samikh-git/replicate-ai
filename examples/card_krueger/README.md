@@ -9,12 +9,12 @@ See [../README.md](../README.md) for the full list of example packs.
 | `njmin/` | Original `public.dat`, codebook, and SAS check program |
 | `data_population_script.py` | Rebuild `data.csv` from `njmin/public.dat` |
 
-**Paper:** Card, D., & Krueger, A. B. (1994). Minimum wages and employment. *AER* 84(4), 772–793.
+Paper: Card, D., & Krueger, A. B. (1994). Minimum wages and employment. *AER* 84(4), 772–793.
 
 ### Paper links
 
-- **Published:** [https://doi.org/10.1257/aer.84.4.772](https://doi.org/10.1257/aer.84.4.772) · [AEA article page](https://www.aeaweb.org/articles?id=10.1257/aer.84.4.772)
-- **Working paper:** [NBER w4509](https://www.nber.org/papers/w4509)
+- Published: [https://doi.org/10.1257/aer.84.4.772](https://doi.org/10.1257/aer.84.4.772) · [AEA article page](https://www.aeaweb.org/articles?id=10.1257/aer.84.4.772)
+- Working paper: [NBER w4509](https://www.nber.org/papers/w4509)
 
 ```bash
 cd replicate_ai

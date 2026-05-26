@@ -81,7 +81,7 @@ uv run replicate-ai ../examples/<pack>
 
 The Card & Krueger example pack (`../examples/card_krueger/`) includes
 `card_krueger.pdf`, `data.csv` (with a planted demo bug), and `njmin/` survey
-files. The CLI extracts the PDF **on your machine** (CPU-heavy OCR/Camelot), then
+files. The CLI extracts the PDF on your machine (CPU-heavy OCR/Camelot), then
 uploads `paper.pdf`, `data.csv`, `paper_text.md`, and `paper_tables.json` into
 Modal `/workspace`. The sandbox only runs econometrics code. Regenerate the CSV with:
 
@@ -94,13 +94,13 @@ cd replicate_ai
 uv run replicate-ai ../examples/card_krueger
 ```
 
-On a TTY, that launches the **dashboard TUI** (see [DESIGN_TUI.md](../docs/DESIGN_TUI.md)): live run log, headline coefficient card, and final audit. Use `--no-tui` for the plain Rich/stdout CLI (CI-friendly).
+On a TTY, that launches the dashboard TUI (see [DESIGN_TUI.md](../docs/DESIGN_TUI.md)): live run log, headline coefficient card, and final audit. Use `--no-tui` for the plain Rich/stdout CLI (CI-friendly).
 
-When you pass an `example_dir`, the audit is **saved on the host** after a successful run:
+When you pass an `example_dir`, the audit is saved on the host after a successful run:
 
 - Default: `<example_dir>/replication_audit.md`
 - Override: `--audit-out /path/to/audit.md`
-- TUI: auto-save on completion; press **`s`** to save again
+- TUI: auto-save on completion; press `s` to save again
 - Opt out: `--no-save-audit`
 
 ```bash
