@@ -1,0 +1,15 @@
+{
+  "paper_title": "Causal Effects in Non-Experimental Studies: Reevaluating the Evaluation of Training Programs",
+  "paper_citation": "Dehejia, R. H., & Wahba, S. (1999). JASA 94(448): 1053–1062.",
+  "outcome_variable": "re78",
+  "treatment_indicator": "treat",
+  "model_notes": "Experimental NSW subset (nsw_dw). Difference in RE78 means, treated minus control. Table 2, Panel C.",
+  "expected_coefficients": [
+    {
+      "name": "treat_re78",
+      "published_estimate": 1794.0,
+      "published_se": 632.0,
+      "published_significance": "~10% / not significant at 5%"
+    }
+  ]
+}

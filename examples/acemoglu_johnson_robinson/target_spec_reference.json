@@ -1,0 +1,15 @@
+{
+  "paper_title": "The Colonial Origins of Comparative Development: An Empirical Investigation",
+  "paper_citation": "Acemoglu, D., Johnson, S., & Robinson, J. A. (2001). AER 91(5): 1369–1401.",
+  "outcome_variable": "logpgp95",
+  "treatment_indicator": "avexpr",
+  "model_notes": "Table 2 OLS: logpgp95 on avexpr (average protection against expropriation risk).",
+  "expected_coefficients": [
+    {
+      "name": "avexpr_on_logpgp95",
+      "published_estimate": 0.94,
+      "published_se": 0.06,
+      "published_significance": "significant at 1%"
+    }
+  ]
+}

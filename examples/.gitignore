@@ -1,0 +1,8 @@
+# Downloaded raw files (reproducible via data_population_script.py)
+**/raw/
+# User-provided papers (large; not redistributed)
+**/paper.pdf
+**/*.pdf
+
+# Keep committed data.csv when small
+!**/data.csv

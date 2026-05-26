@@ -1,0 +1,15 @@
+{
+  "paper_title": "The China Syndrome: Local Labor Market Effects of Import Competition in the United States",
+  "paper_citation": "Autor, D. H., Dorn, D., & Hanson, G. H. (2013). AER 103(6): 2121–2168.",
+  "outcome_variable": "mfg_emp_share",
+  "treatment_indicator": "import_exposure",
+  "model_notes": "Commuting-zone long-difference regression (workfile_china.dta). Match Table 3 manufacturing employment / wage bill outcome.",
+  "expected_coefficients": [
+    {
+      "name": "import_exposure_mfg",
+      "published_estimate": -0.6,
+      "published_se": 0.15,
+      "published_significance": "significant at 5% (approximate; verify Table 3 spec)"
+    }
+  ]
+}

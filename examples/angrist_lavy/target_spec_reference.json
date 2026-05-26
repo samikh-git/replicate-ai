@@ -1,0 +1,15 @@
+{
+  "paper_title": "Using Maimonides' Rule to Estimate the Effect of Class Size on Scholastic Achievement",
+  "paper_citation": "Angrist, J. D., & Lavy, V. (1999). QJE 114(2): 533–575.",
+  "outcome_variable": "avgtest",
+  "treatment_indicator": "class_size",
+  "model_notes": "5th grade (final5.dta). IV: enrollment-based instrument for class size. Match Table II / V for 5th grade math or reading.",
+  "expected_coefficients": [
+    {
+      "name": "class_size_iv",
+      "published_estimate": -0.25,
+      "published_se": 0.08,
+      "published_significance": "significant at 5% (order of magnitude; verify column in Table II)"
+    }
+  ]
+}

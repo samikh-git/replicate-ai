@@ -1,0 +1,15 @@
+{
+  "paper_title": "Estimating the Effect of Unearned Income on Labor Earnings, Savings, and Consumption",
+  "paper_citation": "Imbens, G. W., Rubin, D. B., & Sacerdote, B. I. (2001). AER 91(4): 778–794.",
+  "outcome_variable": "labor_earnings",
+  "treatment_indicator": "yearly_prize",
+  "model_notes": "Reduced-form: post-winning labor earnings on lottery prize amount. Check paper Table 2 for modest vs large prizes.",
+  "expected_coefficients": [
+    {
+      "name": "prize_on_earnings",
+      "published_estimate": -0.11,
+      "published_se": null,
+      "published_significance": "elasticity (modest prizes); see paper Table 2"
+    }
+  ]
+}

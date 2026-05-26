@@ -1,0 +1,40 @@
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.apdisk
+*.icloud
+
+# --- Editors & IDEs ---
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Optional: uncomment to ignore all VS Code/Cursor workspace settings
+# .vscode/
+# .cursor/
+
+
+# --- Demo artifacts (regenerate locally) ---
+demo.mp4
+demo_transcript.md
+
+# --- Logs ---
+*.log
+logs/
