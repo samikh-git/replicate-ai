@@ -11,6 +11,7 @@ dependencies = [
   "langchain-groq>=0.3",
   "langchain-modal>=0.0.4",
   "modal>=1.4",
+  "docling>=2.95.0",
   "pymupdf4llm>=0.0.17",
   "pymupdf>=1.24",
   "camelot-py>=0.11",
@@ -28,7 +29,8 @@ sandbox = [
   "pyfixest==0.25.*",
   "matplotlib==3.9.*",
 ]
-dev = ["pytest", "ruff", "rdata"]
+dev = ["pytest", "ruff", "rdata", "httpx"]
+gui = ["starlette>=0.45", "uvicorn[standard]>=0.32"]
 
 [project.scripts]
 replicate-ai = "replicate_ai.main:main"
@@ -42,6 +44,7 @@ packages = ["src/replicate_ai"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/replicate_ai/system_prompts" = "replicate_ai/system_prompts"
+"src/replicate_ai/gui/static" = "replicate_ai/gui/static"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

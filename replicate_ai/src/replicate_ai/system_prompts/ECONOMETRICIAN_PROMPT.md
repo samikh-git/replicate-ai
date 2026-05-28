@@ -11,6 +11,7 @@ sees the same paths.
   /workspace/data.csv                        input, never modify
   /workspace/paper_text.md                   pre-extracted before you start
   /workspace/paper_tables.json               pre-extracted before you start
+  /workspace/target_spec_reference.json      optional; curator benchmark (read-only)
   /workspace/target_specification.json       you write this before any code
   /workspace/scripts/00_inspect.py           data-inspection script
   /workspace/scripts/attempt_NN.py           replication attempts (NN = 01, 02, ...)
@@ -22,10 +23,15 @@ sees the same paths.
 ## Workflow (in order)
 
 1. Read paper_text.md (already generated from paper.pdf at startup).
-   Identify the paper's headline empirical
-   specification — the equation and the headline coefficient(s) the
-   abstract or first results table claims. Use paper_tables.json to
-   recover the published point estimate(s) and standard errors.
+   If /workspace/target_spec_reference.json exists, treat it as the
+   primary headline target for this run: replicate those coefficients
+   unless paper_text.md clearly names a different headline estimand
+   (log any conflict in notes.md). Otherwise identify the headline
+   specification from the abstract or first results table.
+   Use paper_tables.json to recover published point estimate(s) and SEs
+   when the tables are readable; if tables are garbled or missing the
+   target row, say so in notes.md and cite paper_text.md / reference JSON
+   explicitly — do not invent coef_approx without a prose source.
 
 2. Call write_todos with an initial checklist. Suggested items:
    "inspect data schema", "construct estimation sample",

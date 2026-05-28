@@ -76,7 +76,7 @@ The paper choice is frozen on day 1 of implementation. Switching mid-build inval
 
 ## 5. System architecture
 
-The architecture leans heavily on built-in `deepagents` primitives. PDF parsing runs on the host (CPU-heavy OCR/Camelot); econometric code runs in Modal via the `ModalSandbox` backend (see [Sandboxes](https://docs.langchain.com/oss/python/deepagents/customization)). There is no persistent host `workspace/` directory — inputs are copied from an example pack (or user-provided paths) into Modal `/workspace` at run start.
+The architecture leans heavily on built-in `deepagents` primitives. PDF parsing runs on the host (CPU-heavy Docling by default, or legacy pymupdf4llm + Camelot); econometric code runs in Modal via the `ModalSandbox` backend (see [Sandboxes](https://docs.langchain.com/oss/python/deepagents/customization)). There is no persistent host `workspace/` directory — inputs are copied from an example pack (or user-provided paths) into Modal `/workspace` at run start.
 
 ```mermaid
 flowchart TB
@@ -107,7 +107,7 @@ flowchart TB
 
 | Stage | Where | Why |
 |-------|--------|-----|
-| PDF → `paper_text.md`, `paper_tables.json` | Host (`preflight.py` + `tools/pdf_core.py`) | OCR/Camelot are CPU-heavy; running them in Modal burns sandbox time and bloats the image |
+| PDF → `paper_text.md`, `paper_tables.json` | Host (`preflight.py` + `tools/pdf_core.py`, `pdf_docling.py`) | Docling/layout inference is CPU-heavy; running it in Modal burns sandbox time and bloats the image |
 | Seed `paper.pdf`, `data.csv` | Host → Modal (`filesystem.copy_from_local`) | User drops files in `examples/card_krueger/` (or similar); no local mirror under `replicate_ai/workspace/` |
 | Replication scripts | Modal (`execute` via `ReplicateModalSandbox`) | Isolated econometrics stack; matches agent VFS paths |
 | LLM calls | Host | `get_chat_model()` — Anthropic or Cloudflare Workers AI (`LLM_PROVIDER` in `.env`) |
@@ -170,22 +170,24 @@ Pipeline (see `replicate_ai/preflight.py`):
 3. Create Modal sandbox; `copy_from_local` → `/workspace/paper.pdf`, `data.csv`, `paper_text.md`, `paper_tables.json`.
 4. Delete the temp dir. No persistent `replicate_ai/workspace/` folder.
 
-Implementation (`pdf_core.py`):
+Implementation (`pdf_core.py` + `pdf_docling.py`):
 
-- `pymupdf4llm` for body text → Markdown.
-- `camelot-py` (lattice, then stream) for tables; skip empty Camelot regions; caption regex matches `Table N:` and `TABLE N—` styles.
+- **Default (`docling`)**: [Docling](https://github.com/docling-project/docling) layout model + table structure on CPU (`DOCLING_DEVICE` forced to CPU for portability). Exports `paper_text.md` via `export_to_markdown()` and structured tables via `TableItem.export_to_dataframe()`. Table captions resolve from Docling text refs when present; otherwise fall back to `Table N` regex in markdown.
+- **Legacy (`--pdf-backend legacy`)**: `pymupdf4llm` for body text; `camelot-py` (lattice, then stream) for tables. Requires Ghostscript (`brew install ghostscript` on macOS).
+- First Docling run downloads Hugging Face layout weights (~hundreds of MB). Optional `REPLICATE_AI_PDF_OCR=true` for scanned PDFs (slower).
 - No programmatic LaTeX → equation parsing; the agent reads markdown.
 
-Host system deps: Ghostscript for Camelot — `brew install ghostscript` (macOS). PDF libs are in `[project.dependencies]`, not in the Modal sandbox image.
+PDF libs are in `[project.dependencies]`, not in the Modal sandbox image.
 
-CLI flags:
+CLI / env:
 
+- `--pdf-backend docling|legacy` — override `REPLICATE_AI_PDF_BACKEND` (default: `docling`).
 - `--no-seed` — do not copy example files into `/workspace`.
 - `--skip-pdf-extract` — skip host extraction (requires `paper_text.md` already in `/workspace`).
 
 Failure modes (agent recovery unchanged):
 
-- Scanned PDFs often yield empty `paper_tables.json` cells; the agent should `grep` `paper_text.md` for `TABLE N` (tables are usually embedded in markdown from OCR).
+- **Scanned PDFs** (bitmap image pages, no text layer) yield garbled or missing `paper_tables.json` cells — even with Docling's layout model. `paper_text.md` is usually usable. The agent should fall back to `grep`-ing `paper_text.md` for `TABLE N`, and the auditor should anchor published values to `target_spec_reference.json` when table cells are unreadable. Set `REPLICATE_AI_PDF_OCR=true` to enable RapidOCR for true image-only PDFs (slower, downloads extra model weights; does not fix encoding artifacts in already-digitised scans).
 - Re-run full pipeline to re-extract; there is no in-agent re-extract tool in v1.
 
 ### 6.2 Code execution: `ModalSandbox` backend
@@ -525,7 +527,7 @@ sequenceDiagram
     participant A as Auditor
 
     U->>H: example_dir (PDF + CSV)
-    H->>H: pymupdf4llm + camelot (local)
+    H->>H: Docling or legacy pymupdf4llm+camelot (local)
     H->>FS: upload paper.pdf, data.csv, paper_text.md, paper_tables.json
     U->>P: "Replicate paper.pdf with data.csv"
     P->>FS: read paper_text.md
@@ -611,6 +613,7 @@ replicate-ai/
   docs/
     DESIGN.md
     DESIGN_TUI.md
+    DESIGN_GUI.md
     ROADMAP.md
   pyproject.toml             # host deps + [dependency-groups.sandbox] + [dependency-groups.dev]
   uv.lock
@@ -625,9 +628,13 @@ replicate-ai/
       sandbox_image.py       # build_sandbox_image() from sandbox dep group
       prompts.py
       workspace.py           # seed_example_to_sandbox, upload helpers
-      tools/pdf_core.py      # pymupdf4llm + camelot (host only)
+      tools/pdf_core.py      # PDF dispatch (host)
+      tools/pdf_docling.py   # Docling backend (host)
       subagents/auditor.py
       system_prompts/        # ECONOMETRICIAN_PROMPT.md, AUDITOR.md
+      gui/                   # browser GUI (--gui); see DESIGN_GUI.md
+      tui/                   # Textual dashboard; see DESIGN_TUI.md
+      runner/                # run_replication + TUI events
     tests/
   examples/card_krueger/
     card_krueger.pdf         # seeded as /workspace/paper.pdf
@@ -638,7 +645,7 @@ replicate-ai/
   demo_transcript.md
 ```
 
-Host installs: `deepagents`, `modal`, `langchain-*` providers, `pymupdf4llm`, `camelot-py`, plus Ghostscript (system). Modal image installs only the econometrics stack from `[dependency-groups.sandbox]`.
+Host installs: `deepagents`, `modal`, `langchain-*` providers, `docling`, plus legacy `pymupdf4llm` / `camelot-py` (for `--pdf-backend legacy`; Ghostscript system dep on macOS). Modal image installs only the econometrics stack from `[dependency-groups.sandbox]`.
 
 ### 12.1 Package management with uv
 
@@ -658,6 +665,7 @@ dependencies = [
   "langchain-cloudflare>=0.3.4",
   "langchain-modal>=0.0.4",
   "modal>=1.4",
+  "docling>=2.95.0",
   "pymupdf4llm>=0.0.17",
   "pymupdf>=1.24",
   "camelot-py>=0.11",

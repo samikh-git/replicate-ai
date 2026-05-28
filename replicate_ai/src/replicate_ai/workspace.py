@@ -60,6 +60,13 @@ def seed_example_to_sandbox(example_dir: Path | None = None) -> list[str]:
         remote = f"{SANDBOX_WORKSPACE}/{dest_name}"
         fs.copy_from_local(src, remote)
         seeded.append(remote)
+
+    reference = directory / "target_spec_reference.json"
+    if reference.is_file():
+        remote_ref = f"{SANDBOX_WORKSPACE}/target_spec_reference.json"
+        fs.copy_from_local(reference, remote_ref)
+        seeded.append(remote_ref)
+
     return seeded
 
 

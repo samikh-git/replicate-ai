@@ -17,6 +17,13 @@ from replicate_ai.runner.run import RunConfig  # noqa: E402
 from replicate_ai.tui.app import ReplicateTuiApp  # noqa: E402
 
 try:
+    from replicate_ai.gui.launch import run_gui  # noqa: E402
+
+    _GUI_AVAILABLE = True
+except ImportError:
+    _GUI_AVAILABLE = False
+
+try:
     from rich.console import Console
     from rich.markdown import Markdown
     from rich.panel import Panel
@@ -58,6 +65,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip automatic PDF→markdown extraction (paper_text.md must already exist)",
     )
     parser.add_argument(
+        "--pdf-backend",
+        choices=("docling", "legacy"),
+        default=None,
+        help=(
+            "Host PDF extractor: docling (default, layout-aware tables) or "
+            "legacy (pymupdf4llm + Camelot). Overrides REPLICATE_AI_PDF_BACKEND."
+        ),
+    )
+    parser.add_argument(
         "-m",
         "--message",
         help="Override the default user message",
@@ -87,6 +103,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--tui-demo",
         action="store_true",
         help="Launch the TUI with fake demo data (shell-only milestone).",
+    )
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Launch the browser GUI (local server on 127.0.0.1).",
+    )
+    parser.add_argument(
+        "--gui-demo",
+        action="store_true",
+        help="Launch the GUI with fake demo data (no Modal / LLM).",
     )
     parser.add_argument(
         "--audit-out",
@@ -120,11 +146,35 @@ def main(argv: list[str] | None = None) -> None:
         if args.no_seed:
             example_dir = None
 
+    if args.gui_demo or args.gui:
+        if not _GUI_AVAILABLE:
+            parser.error(
+                "GUI requires optional dependencies. Run: uv sync --group gui"
+            )
+        if args.gui_demo:
+            run_gui(demo=True, save_audit=not args.no_save_audit, audit_out=args.audit_out)
+            return
+        initial = None
+        if example_dir is not None:
+            initial = RunConfig(
+                example_dir=example_dir,
+                provider=args.provider,
+                user_message=args.message,
+                skip_pdf_extract=args.skip_pdf_extract,
+                pdf_backend=args.pdf_backend,
+            )
+        run_gui(
+            initial=initial,
+            save_audit=not args.no_save_audit,
+            audit_out=args.audit_out,
+        )
+        return
+
     if args.tui_demo:
         ReplicateTuiApp(demo=True).run()
         return
 
-    use_tui = tui_allowed and (args.tui or example_dir is not None)
+    use_tui = tui_allowed and (args.tui or example_dir is not None) and not args.gui
     if use_tui:
         if example_dir is None and not args.tui_demo:
             parser.error("example_dir is required for the TUI (or use --tui-demo)")
@@ -134,6 +184,7 @@ def main(argv: list[str] | None = None) -> None:
                 provider=args.provider,
                 user_message=args.message,
                 skip_pdf_extract=args.skip_pdf_extract,
+                pdf_backend=args.pdf_backend,
             ),
             audit_out=None if args.no_save_audit else args.audit_out,
             save_audit=not args.no_save_audit,
@@ -145,6 +196,7 @@ def main(argv: list[str] | None = None) -> None:
         provider=args.provider,
         example_dir=example_dir,
         skip_pdf_extract=args.skip_pdf_extract,
+        pdf_backend=args.pdf_backend,
     )
     audit_md = None
     if isinstance(result, dict):

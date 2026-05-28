@@ -6,6 +6,9 @@ from replicate_ai.tui.events import Phase
 
 
 def display_phase_label(phase: Phase, deliverables: set[str]) -> str:
+    # Poll loop may surface replication_audit.md while internal phase is still agent.
+    if "replication_audit.md" in deliverables:
+        return "Audit"
     if phase in (Phase.preflight, Phase.seeding):
         return "Read paper"
     if phase == Phase.agent:

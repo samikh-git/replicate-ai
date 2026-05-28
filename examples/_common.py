@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import shutil
 import sys
 import urllib.request
@@ -13,6 +14,23 @@ def download_file(url: str, dest: Path, *, timeout: float = 120.0) -> None:
     req = urllib.request.Request(url, headers={"User-Agent": "replicate-ai-examples/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         dest.write_bytes(resp.read())
+
+
+def verify_file_sha256(path: Path, expected_hex: str) -> None:
+    """Exit with an error if path does not match the expected SHA-256 digest."""
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    got = digest.hexdigest()
+    if got.lower() != expected_hex.lower():
+        print(
+            f"SHA-256 mismatch for {path}:\n"
+            f"  expected {expected_hex}\n"
+            f"  got      {got}",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
 
 def require_pandas():

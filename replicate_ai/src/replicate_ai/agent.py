@@ -15,6 +15,7 @@ def run_agent(
     provider: str | None = None,
     example_dir: Path | None = None,
     skip_pdf_extract: bool = False,
+    pdf_backend: str | None = None,
     emit=None,
 ) -> dict:
     """Create a Modal sandbox, build the deep agent, and invoke it once."""
@@ -26,6 +27,7 @@ def run_agent(
             provider=provider,
             user_message=user_message,
             skip_pdf_extract=skip_pdf_extract,
+            pdf_backend=pdf_backend,
         ),
         emit=emit,
     )

@@ -12,6 +12,12 @@ def _fmt_num(x: float, *, decimals: int) -> str:
     return f"{x:.{decimals}f}"
 
 
+def _fmt_se(se: float | None, *, decimals: int) -> str:
+    if se is None:
+        return "—"
+    return _fmt_num(se, decimals=decimals)
+
+
 def format_model_spec(spec: str) -> Text:
     """Format the model spec equation with β emphasized in accent.
 
@@ -42,7 +48,7 @@ def format_headline_card(
     estimate_se: float,
     estimate_stars: str,
     published: float,
-    published_se: float,
+    published_se: float | None,
     published_stars: str,
     delta: float,
     verdict: Verdict,
@@ -53,7 +59,7 @@ def format_headline_card(
     est = _fmt_num(estimate, decimals=decimals)
     est_se = _fmt_num(estimate_se, decimals=decimals)
     pub = _fmt_num(published, decimals=decimals)
-    pub_se = _fmt_num(published_se, decimals=decimals)
+    pub_se = _fmt_se(published_se, decimals=decimals)
     d = f"{delta:+.{decimals}f}"
 
     # Keep alignment stable and calm.
@@ -80,11 +86,19 @@ def format_ci_strip(
     estimate: float,
     estimate_se: float,
     published: float,
-    published_se: float,
+    published_se: float | None,
 ) -> str:
     """ASCII strip with ● (estimate) and ◆ (published)."""
-    lo = min(estimate - 2 * estimate_se, published - 2 * published_se)
-    hi = max(estimate + 2 * estimate_se, published + 2 * published_se)
+    lo_candidates = [estimate - 2 * estimate_se]
+    hi_candidates = [estimate + 2 * estimate_se]
+    if published_se is not None:
+        lo_candidates.append(published - 2 * published_se)
+        hi_candidates.append(published + 2 * published_se)
+    else:
+        lo_candidates.append(published)
+        hi_candidates.append(published)
+    lo = min(lo_candidates)
+    hi = max(hi_candidates)
     lo = math.floor(lo)
     hi = math.ceil(hi)
     if hi <= lo:

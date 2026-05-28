@@ -13,7 +13,7 @@ import modal
 from deepagents import create_deep_agent
 from modal.exception import SandboxFilesystemNotFoundError
 
-from replicate_ai.constants import APP_NAME, DEFAULT_USER_MESSAGE, SANDBOX_TIMEOUT_SECONDS
+from replicate_ai.constants import APP_NAME, SANDBOX_TIMEOUT_SECONDS, resolve_user_message
 from replicate_ai.modal_sandbox import create_modal_backend
 from replicate_ai.models import get_chat_model, provider_summary
 from replicate_ai.preflight import (
@@ -58,6 +58,7 @@ class RunConfig:
     provider: str | None = None
     user_message: str | None = None
     skip_pdf_extract: bool = False
+    pdf_backend: str | None = None
 
 
 def _noop_emit(_: object) -> None:
@@ -87,7 +88,10 @@ def _emit_coefficients_if_ready(fs, *, emit: EmitFn) -> bool:
     target_text = _read_nonempty_file(fs, DELIVERABLE_PATHS["target_specification.json"])
     if target_text is None:
         return False
-    parsed = parse_coefficients_event(target_text, coeff_text)
+    try:
+        parsed = parse_coefficients_event(target_text, coeff_text)
+    except Exception:
+        return False
     if parsed is not None:
         emit(parsed)
         return True
@@ -157,12 +161,14 @@ def run_replication(
         if config.example_dir is not None and not config.skip_pdf_extract:
             pdf = find_example_pdf(config.example_dir)
             if pdf is not None:
-                extract_dir, summary = extract_paper_locally(pdf)
+                extract_dir, summary = extract_paper_locally(
+                    pdf, pdf_backend=config.pdf_backend
+                )
                 emit(LogChunk(f"[host] Local PDF extract: {summary}", source="host"))
                 if "0 tables" in summary.lower():
                     emit(
                         Status(
-                            "Camelot found no tables; agent will rely on paper_text.md.",
+                            "PDF extract found no tables; agent will rely on paper_text.md.",
                             source="host",
                         )
                     )
@@ -227,7 +233,10 @@ def run_replication(
                 "messages": [
                     {
                         "role": "user",
-                        "content": config.user_message or DEFAULT_USER_MESSAGE,
+                        "content": resolve_user_message(
+                            user_message=config.user_message,
+                            example_dir=config.example_dir,
+                        ),
                     }
                 ]
             }

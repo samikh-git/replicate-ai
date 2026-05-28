@@ -43,18 +43,18 @@ flowchart LR
 
 | Stage             | Where                                    | Output                                                                           |
 | ----------------- | ---------------------------------------- | -------------------------------------------------------------------------------- |
-| PDF extraction    | Host (PyMuPDF, Camelot)                  | `paper_text.md`, `paper_tables.json`                                             |
+| PDF extraction    | Host ([Docling](https://github.com/docling-project/docling) default; optional legacy PyMuPDF + Camelot) | `paper_text.md`, `paper_tables.json` |
 | Spec + estimation | Modal sandbox                            | `target_specification.json`, `scripts/attempt_*.py`, `results/coefficients.json` |
 | Audit             | Auditor sub-agent (host LLM, sandbox FS) | `replication_audit.md`                                                           |
 
 
-On a TTY you get a Textual dashboard: run phases, live sandbox log, headline coefficient card, scrollable audit. Details: [docs/DESIGN_TUI.md](./docs/DESIGN_TUI.md).
+On a TTY you get a Textual dashboard; or use the browser GUI (`--gui`) to pick a pack or upload PDF + CSV. Both show run phases, live logs, the headline coefficient card, and the audit. See [docs/DESIGN_TUI.md](./docs/DESIGN_TUI.md) and [docs/DESIGN_GUI.md](./docs/DESIGN_GUI.md).
 
 ---
 
 ## Quick start
 
-Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/), [Modal](https://modal.com) account, an LLM API key (Anthropic recommended for demos). For PDF tables on macOS: `brew install ghostscript`.
+Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/), [Modal](https://modal.com) account, an LLM API key (Anthropic recommended for demos). First PDF run downloads Docling layout weights from Hugging Face. Legacy PDF mode (`--pdf-backend legacy`) needs Ghostscript on macOS: `brew install ghostscript`.
 
 ```bash
 git clone https://github.com/samikh-git/replicate-ai.git && cd replciate-ai/replicate_ai
@@ -79,6 +79,9 @@ uv run replicate-ai --no-tui ../examples/card_krueger
 
 # Fake TUI demo (no Modal / LLM)
 uv run replicate-ai --tui-demo
+
+# Browser GUI (uv sync --group gui first)
+uv run replicate-ai --gui
 
 # Tests
 cd replicate_ai && uv run pytest -q
@@ -158,6 +161,6 @@ Non-goals and schemas: [DESIGN.md §2 & §10](./docs/DESIGN.md). Planned work: [
 
 Working end-to-end: PDF → agent loop → audit file, with TUI and multi-provider LLM support.
 
-Demonstrated MATCH on headline estimands: Card & Krueger, Dehejia–Wahba (experimental NSW). Other packs are run candidates — not pre-certified benchmarks until logged in a future `BENCHMARK.md` ([docs/ROADMAP.md](./docs/ROADMAP.md)).
+Demonstrated MATCH on headline estimands: Card & Krueger, Dehejia–Wahba (experimental NSW). Track expected vs actual results for all packs in [docs/test.md](./docs/test.md) (future automation: [docs/ROADMAP.md](./docs/ROADMAP.md) `BENCHMARK.md`).
 
 Contributions: pick an item from Now in the roadmap; match patterns in [AGENTS.md](./AGENTS.md).

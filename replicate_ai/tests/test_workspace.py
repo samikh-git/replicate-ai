@@ -36,6 +36,28 @@ class TestSeedExampleToSandbox:
         assert fs.copy_from_local.call_count == 2
         set_modal_sandbox(None)
 
+    def test_copies_target_spec_reference_when_present(self, tmp_path: Path):
+        example = tmp_path / "example"
+        example.mkdir()
+        (example / "paper.pdf").write_bytes(b"%PDF")
+        (example / "data.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+        (example / "target_spec_reference.json").write_text("{}", encoding="utf-8")
+
+        fs = MagicMock()
+        sandbox = MagicMock()
+        sandbox.filesystem = fs
+        set_modal_sandbox(sandbox)
+
+        seeded = seed_example_to_sandbox(example)
+
+        assert seeded == [
+            f"{SANDBOX_WORKSPACE}/paper.pdf",
+            f"{SANDBOX_WORKSPACE}/data.csv",
+            f"{SANDBOX_WORKSPACE}/target_spec_reference.json",
+        ]
+        assert fs.copy_from_local.call_count == 3
+        set_modal_sandbox(None)
+
     def test_missing_pdf_raises(self, tmp_path: Path):
         example = tmp_path / "empty"
         example.mkdir()

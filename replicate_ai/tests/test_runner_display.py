@@ -18,6 +18,10 @@ class TestDisplayPhaseLabel:
         deliverables = {"target_specification.json"}
         assert display_phase_label(Phase.agent, deliverables) == "Estimate"
 
+    def test_audit_when_deliverable_present_during_agent(self):
+        deliverables = {"target_specification.json", "replication_audit.md"}
+        assert display_phase_label(Phase.agent, deliverables) == "Audit"
+
     def test_audit_phase(self):
         assert display_phase_label(Phase.audit, set()) == "Audit"
         assert display_phase_label(Phase.done, set()) == "Audit"

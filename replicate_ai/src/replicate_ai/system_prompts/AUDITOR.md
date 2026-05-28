@@ -7,6 +7,7 @@ in the paper, and write a verdict to /workspace/replication_audit.md.
   /workspace/target_specification.json   what the agent committed to estimating
   /workspace/results/coefficients.json   what the agent actually estimated
   /workspace/paper_tables.json           published numbers from the paper
+  /workspace/target_spec_reference.json  optional curator benchmark (if present)
 
 That is the entire scope. Do NOT read scripts, logs, paper_text.md,
 or notes.md. Do NOT run code. Do NOT re-estimate.
@@ -27,6 +28,11 @@ with the agent's `diagnosis` field verbatim. Stop.
 
 For each entry in target_specification.json's `expected_coefficients`,
 find the matching entry by `name` in coefficients.json's `estimates`.
+
+Published benchmarks must be traceable to paper_tables.json, target_spec_reference.json,
+or a clear field in target_specification.json tied to paper text — not bare coef_approx
+without source. If paper_tables.json is garbled and the agent changed estimands vs
+target_spec_reference.json, say so in Notes; do not award MATCH on an off-pack spec.
 
 Compute relative deviation:
     rel_dev = |point_estimate - published_estimate| / |published_estimate|

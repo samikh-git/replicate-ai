@@ -41,6 +41,26 @@ def _format_estimate_label(name: str) -> str:
     return f"β̂ ({name})"
 
 
+def _optional_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _first_present(mapping: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in mapping and mapping[key] is not None:
+            return mapping[key]
+    return None
+
+
+def _required_float(mapping: dict[str, Any], *keys: str) -> float | None:
+    return _optional_float(_first_present(mapping, *keys))
+
+
 def compute_verdict(delta: float, *, published: float) -> Verdict:
     tol = max(0.25, 0.1 * abs(published))
     ad = abs(delta)
@@ -55,8 +75,12 @@ def parse_coefficients_event(
     target_json: str,
     coefficients_json: str,
 ) -> CoefficientsParsed | None:
-    target = json.loads(target_json)
-    coeffs = json.loads(coefficients_json)
+    try:
+        target = json.loads(target_json)
+        coeffs = json.loads(coefficients_json)
+    except json.JSONDecodeError:
+        return None
+
     if coeffs.get("status") != "success":
         return None
 
@@ -67,14 +91,29 @@ def parse_coefficients_event(
 
     exp = expected_list[0]
     est = estimates[0]
-    if exp.get("name") != est.get("name"):
-        # Fall back to first entries even if names differ.
-        pass
+    if not isinstance(exp, dict) or not isinstance(est, dict):
+        return None
 
-    published = float(exp["published_estimate"])
-    published_se = float(exp["published_se"])
-    estimate = float(est["point_estimate"])
-    estimate_se = float(est["std_error"])
+    published = _required_float(exp, "published_estimate", "estimate")
+    published_se = _optional_float(_first_present(exp, "published_se", "se", "std_error"))
+    estimate = _required_float(
+        est,
+        "point_estimate",
+        "estimate",
+        "coef",
+        "coefficient",
+        "beta",
+    )
+    estimate_se = _required_float(
+        est,
+        "std_error",
+        "se",
+        "stderr",
+        "standard_error",
+    )
+    if published is None or estimate is None or estimate_se is None:
+        return None
+
     delta = estimate - published
 
     est_stars = significance_to_stars(

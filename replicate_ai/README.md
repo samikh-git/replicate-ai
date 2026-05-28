@@ -9,6 +9,7 @@ See [ROADMAP.md](../docs/ROADMAP.md) for planned work and [DESIGN.md](../docs/DE
 ```bash
 cd replicate_ai
 uv sync
+uv sync --group gui      # optional: browser GUI (--gui)
 cp .env.example .env     # add ANTHROPIC_API_KEY (see below)
 uv run modal token new   # one-time Modal auth (or set MODAL_TOKEN_* in .env)
 ```
@@ -25,7 +26,10 @@ uv run modal token new   # one-time Modal auth (or set MODAL_TOKEN_* in .env)
 | `GEMINI_THINKING_LEVEL` | `LLM_PROVIDER=gemini` | Thinking level: `minimal` \| `low` \| `medium` \| `high` (default `medium`) |
 | `GROQ_API_KEY` | `LLM_PROVIDER=groq` | Groq API key |
 | `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET` | No* | Modal sandbox; *not needed if you ran `modal token new` |
+| `REPLICATE_AI_SANDBOX_TIMEOUT_SECONDS` | No | Modal sandbox timeout (seconds; default 1800 / 30 min) |
 | `LANGSMITH_*` | No | Optional tracing in [LangSmith](https://smith.langchain.com/) |
+| `TQDM_DISABLE` | No | Disable tqdm progress bars (stability on some macOS setups) |
+| `HF_HUB_DISABLE_PROGRESS_BARS` | No | Disable Hugging Face progress bars (often fixes GUI startup crashes) |
 
 See [`.env.example`](.env.example) for a full template.
 
@@ -51,8 +55,12 @@ LLM_PROVIDER=groq uv run replicate-ai ../examples/card_krueger
 uv run replicate-ai ../examples/card_krueger --provider glm
 ```
 
-PDF parsing runs on the host. Install Ghostscript for Camelot table extraction:
-`brew install ghostscript` on macOS.
+PDF parsing runs on the host with **Docling** by default (layout-aware tables).
+The first run downloads Docling layout weights from Hugging Face. For legacy
+Camelot extraction: `uv run replicate-ai … --pdf-backend legacy` and install
+Ghostscript (`brew install ghostscript` on macOS).
+
+**Scanned PDFs:** Older journal issues (e.g. AER pre-2000) are often bitmap scans rather than text-layer PDFs. Docling can detect table regions but cell content may be garbled or missing in `paper_tables.json`. In that case the agent falls back to searching `paper_text.md` and the `target_spec_reference.json` benchmark — replication can still succeed (demonstrated on Imbens et al. 2001). Enabling OCR (`REPLICATE_AI_PDF_OCR=true`) may help on true image scans but is slower and not guaranteed to clean up encoding artifacts in already-digitised PDFs.
 
 ## Example packs
 
@@ -75,13 +83,13 @@ uv run --directory replicate_ai python ../examples/<pack>/data_population_script
 uv run replicate-ai ../examples/<pack>
 ```
 
-`target_spec_reference.json` in each pack lists published headline coefficients for comparison (the agent still writes `target_specification.json` at runtime).
+`target_spec_reference.json` in each pack lists published headline coefficients; it is seeded to `/workspace/target_spec_reference.json` as a read-only hint. The agent still writes `target_specification.json` at runtime.
 
 ## Run
 
 The Card & Krueger example pack (`../examples/card_krueger/`) includes
 `card_krueger.pdf`, `data.csv` (with a planted demo bug), and `njmin/` survey
-files. The CLI extracts the PDF on your machine (CPU-heavy OCR/Camelot), then
+files. The CLI extracts the PDF on your machine (CPU-heavy Docling on first run), then
 uploads `paper.pdf`, `data.csv`, `paper_text.md`, and `paper_tables.json` into
 Modal `/workspace`. The sandbox only runs econometrics code. Regenerate the CSV with:
 
@@ -110,7 +118,20 @@ uv run replicate-ai --tui-demo
 # Force TUI or disable it
 uv run replicate-ai --tui ../examples/card_krueger
 uv run replicate-ai --no-tui ../examples/card_krueger
+
+# Browser GUI (requires: uv sync --group gui)
+uv run replicate-ai --gui
+uv run replicate-ai --gui -p anthropic ../examples/card_krueger
+uv run replicate-ai --gui-demo
 ```
+
+See [DESIGN_GUI.md](../docs/DESIGN_GUI.md) for launcher, uploads, and API details.
+
+### GUI run logs
+
+The GUI persists a per-run host log file you can view in-browser via **View full log**:
+
+- `<example_dir>/.replicate_ai/runs/<run_id>.log`
 
 `replicate-ai` is a console script declared in `[project.scripts]`; equivalent
 to `uv run python -m replicate_ai.main`.
@@ -123,6 +144,7 @@ src/replicate_ai/
 ├── agent.py           # thin wrapper around runner.run_replication
 ├── runner/            # orchestration + TUI event emission
 ├── tui/               # Textual dashboard (docs/DESIGN_TUI.md)
+├── gui/               # Browser GUI (docs/DESIGN_GUI.md)
 ├── constants.py       # APP_NAME, default user message, sandbox timeout
 ├── models.py          # LLM provider selection
 ├── prompts.py         # loads system prompts from disk
@@ -130,7 +152,9 @@ src/replicate_ai/
 ├── system_prompts/    # ECONOMETRICIAN_PROMPT.md, AUDITOR.md
 ├── subagents/         # auditor sub-agent config
 ├── preflight.py       # host PDF extract + upload to Modal
-└── tools/pdf_core.py  # PDF parsing logic (host)
+└── tools/
+    ├── pdf_core.py    # PDF dispatch (host)
+    └── pdf_docling.py # Docling backend (host)
 ```
 
 Sandbox Python deps come from `[dependency-groups.sandbox]` in `pyproject.toml`, installed into the Modal image via `uv_pip_install` (see `sandbox_image.py`).

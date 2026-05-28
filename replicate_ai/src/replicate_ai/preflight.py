@@ -7,18 +7,23 @@ import tempfile
 from pathlib import Path
 
 from replicate_ai.example_assets import find_example_pdf
+from replicate_ai.tools.pdf_backends import PdfBackend
 from replicate_ai.tools.pdf_core import run_pdf_extraction
 from replicate_ai.workspace import SANDBOX_WORKSPACE, upload_local_files_to_sandbox
 
 EXTRACT_ARTIFACTS = ("paper_text.md", "paper_tables.json")
 
 
-def extract_paper_locally(pdf_path: Path) -> tuple[Path, str]:
+def extract_paper_locally(
+    pdf_path: Path,
+    *,
+    pdf_backend: PdfBackend | str | None = None,
+) -> tuple[Path, str]:
     """Extract PDF into a temp dir; returns (temp_dir, summary). Caller deletes temp_dir."""
     tmp = Path(tempfile.mkdtemp(prefix="replicate_ai_extract_"))
     staging_pdf = tmp / "paper.pdf"
     shutil.copy2(pdf_path, staging_pdf)
-    summary = run_pdf_extraction(str(staging_pdf))
+    summary = run_pdf_extraction(str(staging_pdf), backend=pdf_backend)
     return tmp, summary
 
 

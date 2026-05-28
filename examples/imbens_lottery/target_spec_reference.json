@@ -1,9 +1,40 @@
 {
   "paper_title": "Estimating the Effect of Unearned Income on Labor Earnings, Savings, and Consumption",
   "paper_citation": "Imbens, G. W., Rubin, D. B., & Sacerdote, B. I. (2001). AER 91(4): 778–794.",
-  "outcome_variable": "labor_earnings",
-  "treatment_indicator": "yearly_prize",
-  "model_notes": "Reduced-form: post-winning labor earnings on lottery prize amount. Check paper Table 2 for modest vs large prizes.",
+  "user_message": "Replicate the reduced-form elasticity of labor earnings with respect to yearly lottery prize for modest prizes (Table 2 / paper discussion; benchmark ≈ −0.11 in this JSON). Use data.csv columns yearlpr (prize) and yearn.1–yearn.7 (post-win earnings by year). Do not substitute the big-winner dummy or Table 5 level specification unless you document why this reference is wrong.",
+  "outcome_variable": "yearn.2",
+  "treatment_indicator": "yearlpr",
+  "model_notes": "Reduced-form: post-winning labor earnings on yearlpr. yearn.1 = win year (t=0); yearn.2–yearn.7 = years 1–6 after win; xearn.1–xearn.6 = pre-win earnings. Modest-prize subsamples often use winner==1 and bigwinner==0 (194 obs); controls are winner==0 (259). Construct the outcome to match Table 2 (e.g. average post-win earnings or log specification) before comparing to the published elasticity.",
+  "data_source": {
+    "paper_year": 2001,
+    "host_repository": "https://github.com/xuyiqing/lalonde",
+    "host_paper": "Imbens & Xu (2024) LaLonde replication tutorial",
+    "file": "data/irs/lottery.RData",
+    "provenance_url": "https://github.com/xuyiqing/lalonde/blob/main/data/irs/source.txt",
+    "variable_keybook_url": "https://github.com/xuyiqing/lalonde/blob/main/data/irs/lottery_keybook.csv",
+    "pinned_sha256": "1014702bfdf33740bdca7caeef0dba913f229082595cd3742769b302cad0b7f4",
+    "n_obs": 496,
+    "sample": "259 controls (small one-time prizes), 237 major-prize winners (43 bigwinner, 194 small winners)"
+  },
+  "data_columns": {
+    "yearlpr": "Annual lottery prize amount (yearly payment for annuity prizes).",
+    "yearn.1": "Labor earnings, win year (t=0).",
+    "yearn.2": "Labor earnings, one year after win (t=1).",
+    "yearn.3": "Labor earnings, two years after win (t=2).",
+    "yearn.4": "Labor earnings, three years after win (t=3).",
+    "yearn.5": "Labor earnings, four years after win (t=4).",
+    "yearn.6": "Labor earnings, five years after win (t=5).",
+    "yearn.7": "Labor earnings, six years after win (t=6).",
+    "xearn.1": "Pre-win earnings, six years before win.",
+    "xearn.6": "Pre-win earnings, one year before win.",
+    "winner": "1 if won a major Megabucks prize; 0 if control (small prize only).",
+    "bigwinner": "1 if big winner (43); among winners, 0 with winner==1 is small winner (194).",
+    "male": "Male indicator.",
+    "workthen": "Employed at time of winning.",
+    "tixbot": "Tickets bought.",
+    "agew": "Age when lottery won.",
+    "educ": "Years of schooling."
+  },
   "expected_coefficients": [
     {
       "name": "prize_on_earnings",

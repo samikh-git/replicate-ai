@@ -10,7 +10,8 @@ examples/<name>/
   data_population_script.py    # fetch raw data → data.csv
   data.csv                     # produced by the script (committed when small)
   paper.pdf                    # you add the PDF (not redistributed here)
-  target_spec_reference.json   # published targets for the auditor (reference)
+  target_spec_reference.json   # published targets; optional "user_message" for the agent
+  user_message.txt             # optional; overrides default run message for this pack
 ```
 
 Run replication:
@@ -26,7 +27,7 @@ uv run replicate-ai ../examples/<name>
 |-----------|--------|------------|
 | [card_krueger](card_krueger/) | Card & Krueger (1994) minimum wages | Demo (planted bug optional) |
 | [dehejia_wahba](dehejia_wahba/) | Dehejia & Wahba (1999) / LaLonde NSW | Easy |
-| [imbens_lottery](imbens_lottery/) | Imbens, Rubin & Sacerdote (2001) lottery income | Easy–medium |
+| [imbens_lottery](imbens_lottery/) | Imbens, Rubin & Sacerdote (2001) lottery income (pinned IRS microdata via [lalonde](https://github.com/xuyiqing/lalonde)) | Easy–medium |
 | [angrist_lavy](angrist_lavy/) | Angrist & Lavy (1999) class size (Maimonides) | Medium |
 | [autor_dorn_hanson](autor_dorn_hanson/) | Autor, Dorn & Hanson (2013) China shock | Medium–hard |
 | [acemoglu_johnson_robinson](acemoglu_johnson_robinson/) | Acemoglu, Johnson & Robinson (2001) institutions | Hard |
@@ -37,7 +38,9 @@ uv run replicate-ai ../examples/<name>
 2. Add `paper.pdf` (or `<dirname>.pdf`) — links in each README
 3. `uv run replicate-ai ../examples/<name>`
 
-Use `--skip-pdf-extract` on reruns after the first successful PDF preflight.
+PDF preflight runs on the host with **Docling** by default (`paper_text.md`, `paper_tables.json` uploaded to Modal). First run downloads layout weights from Hugging Face. Use `--pdf-backend legacy` for pymupdf4llm + Camelot; `--skip-pdf-extract` on reruns after a successful extract.
+
+**Note on scanned PDFs:** Older papers (pre-2000 AER, some QJE issues) are bitmap scans rather than text-layer PDFs. `paper_tables.json` cells may be garbled or reduced to `["index"]`; `paper_text.md` is typically usable. The agent falls back to `paper_text.md` + `target_spec_reference.json` when tables are unreadable — include a `user_message` field in `target_spec_reference.json` to keep it on-target (see `imbens_lottery` for an example). Set `REPLICATE_AI_PDF_OCR=true` to enable OCR on image-only PDFs (slower; downloads additional model weights).
 
 ## Paper links (official)
 

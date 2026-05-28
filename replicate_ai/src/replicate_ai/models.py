@@ -28,6 +28,15 @@ DEFAULT_MODELS: dict[ProviderName, str] = {
     "groq": "llama-3.3-70b-versatile",
 }
 
+# One entry per backend; CLI aliases (kimi, glm, claude) map via PROVIDER_ALIASES.
+CANONICAL_PROVIDERS: tuple[ProviderName, ...] = (
+    "anthropic",
+    "cloudflare-kimi",
+    "cloudflare-glm",
+    "gemini",
+    "groq",
+)
+
 ENV_PROVIDER = "LLM_PROVIDER"
 ENV_ANTHROPIC_MODEL = "ANTHROPIC_MODEL"
 ENV_CF_KIMI_MODEL = "CLOUDFLARE_KIMI_MODEL"
@@ -204,6 +213,14 @@ def _get_groq_chat_model(*, temperature: float, max_tokens: int) -> BaseChatMode
         temperature=temperature,
         max_tokens=max_tokens,
     )
+
+
+def list_provider_options() -> list[dict[str, str]]:
+    """Provider dropdown options for the GUI (canonical ids, no alias duplicates)."""
+    return [
+        {"id": p, "label": provider_summary(p)}
+        for p in CANONICAL_PROVIDERS
+    ]
 
 
 def provider_summary(provider: str | None = None) -> str:

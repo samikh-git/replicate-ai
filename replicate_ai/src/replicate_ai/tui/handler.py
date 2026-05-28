@@ -60,6 +60,14 @@ def apply_event(state: TuiViewState, ev: object) -> None:
 
     if isinstance(ev, AuditReady):
         state.audit_md = ev.markdown
+        state.deliverables.add("replication_audit.md")
+        if state.internal_phase is not None:
+            state.phase_display = display_phase_label(
+                state.internal_phase,
+                state.deliverables,
+            )
+        else:
+            state.phase_display = "Audit"
         return
 
     if isinstance(ev, RunFinished):

@@ -54,7 +54,7 @@ class CoefficientsParsed:
     estimate_se: float
     estimate_stars: str
     published: float
-    published_se: float
+    published_se: float | None
     published_stars: str
     delta: float
     verdict: Verdict

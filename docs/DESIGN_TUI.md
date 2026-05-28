@@ -18,7 +18,7 @@ The TUI adds a full-screen, opinionated terminal experience around that exact wo
 - Stream high-signal logs (host preflight summary and `/workspace/logs/*.log`) into a scrollable pane.
 - Render the final `replication_audit.md` in a focused markdown pane.
 
-The TUI is a run dashboard, not a chat client. The non-TUI CLI path stays available for CI and scripting.
+The TUI is a run dashboard, not a chat client. The non-TUI CLI path stays available for CI and scripting. A browser GUI with the same event pipeline is documented in [DESIGN_GUI.md](./DESIGN_GUI.md).
 
 This document describes the v1 design: a single-screen dashboard for one curated paper, one provider, one run at a time, with a clean, whitespace-heavy aesthetic. Section 10 enumerates what is intentionally out of scope.
 
@@ -50,7 +50,7 @@ This document describes the v1 design: a single-screen dashboard for one curated
 
 ReplicateAI runs are slow (host PDF extraction, Modal cold-start, multi-step agent loops, sandboxed scripts). Today the user experience is:
 
-- A wall of `pymupdf`/Camelot warnings.
+- Host PDF preflight noise (Docling model load, or legacy Camelot/Ghostscript warnings).
 - A long pause while the agent runs.
 - A raw Python `dict` (or, after the recent change, a Rich panel) at the very end.
 
@@ -138,7 +138,7 @@ A single-screen dashboard with three logical regions:
       - `[sandbox]` for tails of `/workspace/logs/*.log`.
     - Truncates after a soft cap (e.g. last 5,000 lines), with a clear marker when older lines were dropped.
   - Right: Detail pane — phase-dependent.
-    - During Read paper / Specify: short status text and any early warnings (e.g. “Camelot yielded 0 tables; agent will rely on `paper_text.md`”).
+    - During Read paper / Specify: short status text and any early warnings (e.g. “PDF extract found 0 tables; agent will rely on `paper_text.md`”).
     - During Estimate: model spec equation at the top, headline coefficient card populated as soon as `coefficients.json` is written (per §6.2).
     - During Audit: rendered `replication_audit.md` beneath the headline coefficient card.
 
@@ -172,7 +172,7 @@ Goal: calm, confident, lots of breathing room. Match the visual feel of the Clau
   - `dim` — 60% gray (borders, inactive phase glyphs, footer keybindings, source prefixes in the run log).
   - `accent` — sienna (project name, active phase glyph, headline coefficient label, deliverable bullets, panel titles).
   - `success` — muted green (`✓`, completed phase glyph, “within tolerance” verdict).
-  - `warning` — muted yellow (e.g. “Camelot found no tables”, “borderline tolerance”).
+  - `warning` — muted yellow (e.g. “PDF extract found no tables”, “borderline tolerance”).
   - `error` — muted red (failed phase, traceback markers, “outside tolerance” verdict).
 
   Rules:

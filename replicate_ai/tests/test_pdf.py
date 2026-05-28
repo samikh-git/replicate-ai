@@ -17,6 +17,7 @@ from replicate_ai.tools.pdf_core import (
     output_dir_for_pdf,
     run_pdf_extraction,
 )
+from replicate_ai.tools.pdf_docling import garbled_table_score
 
 class TestOutputDir:
     def test_under_workspace(self):
@@ -93,11 +94,21 @@ class TestExtractTables:
         assert records[0]["rows"] == [["NJ", "2.76"]]
 
 
+class TestGarbledTableScore:
+    def test_clean_table_low_score(self):
+        rows = [["", "NJ", "PA"], ["Wage", "5.05", "4.25"]]
+        assert garbled_table_score(rows) < 0.1
+
+    def test_noisy_table_high_score(self):
+        rows = [["|", "@", "#"], ["$", "%", "^"]]
+        assert garbled_table_score(rows) > 0.5
+
+
 class TestRunPdfExtraction:
-    @patch("replicate_ai.tools.pdf_core._extract_tables")
+    @patch("replicate_ai.tools.pdf_core._extract_tables_legacy")
     @patch("pymupdf4llm.to_markdown")
     @patch("replicate_ai.tools.pdf_core._count_pages")
-    def test_writes_outputs_and_returns_summary(
+    def test_legacy_writes_outputs_and_returns_summary(
         self,
         mock_count_pages: MagicMock,
         mock_to_markdown: MagicMock,
@@ -116,11 +127,27 @@ class TestRunPdfExtraction:
             0,
         )
 
-        result = run_pdf_extraction(str(pdf))
+        result = run_pdf_extraction(str(pdf), backend="legacy")
 
         assert (tmp_path / "paper_text.md").read_text(encoding="utf-8") == md
         tables = json.loads((tmp_path / "paper_tables.json").read_text(encoding="utf-8"))
         assert len(tables) == 1
+        assert "(legacy)" in result
         assert "28 pages" in result
         assert "Skipped 1 empty" in result
+
+    @patch("replicate_ai.tools.pdf_core._run_docling_extraction")
+    def test_docling_backend_dispatches(
+        self,
+        mock_docling: MagicMock,
+        tmp_path: Path,
+    ):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"%PDF-1.4 minimal")
+        mock_docling.return_value = "Extracted (docling) 10 pages and 2 tables."
+
+        result = run_pdf_extraction(str(pdf), backend="docling")
+
+        assert "(docling)" in result
+        mock_docling.assert_called_once()
 

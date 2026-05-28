@@ -19,7 +19,7 @@ v1 scope (honest limits):
 ```
 replciate-ai/                    # repo root (note spelling)
 ├── AGENTS.md                    # this file
-├── docs/                        # DESIGN.md, DESIGN_TUI.md, ROADMAP.md
+├── docs/                        # DESIGN.md, DESIGN_TUI.md, DESIGN_GUI.md, ROADMAP.md
 ├── examples/                    # paper + data packs (not Python package)
 │   ├── README.md
 │   ├── _common.py               # download / Stata / RData helpers for data scripts
@@ -68,6 +68,7 @@ Schemas and rubric: `docs/DESIGN.md` §6.5–6.8. Canonical prompts: `replicate_
 ```bash
 cd replicate_ai
 uv sync
+uv sync --group gui    # optional: browser GUI (Starlette + uvicorn)
 cp .env.example .env   # ANTHROPIC_API_KEY, MODAL, optional LLM_PROVIDER
 uv run modal token new # if not using MODAL_TOKEN_* in .env
 ```
@@ -77,11 +78,14 @@ uv run modal token new # if not using MODAL_TOKEN_* in .env
 | `uv run replicate-ai ../examples/<pack>` | Full run; TUI on TTY |
 | `uv run replicate-ai --no-tui ../examples/<pack>` | CLI / CI |
 | `uv run replicate-ai --tui-demo` | Fake TUI stream (no Modal/LLM) |
+| `uv run replicate-ai --gui` | Browser GUI (launcher + dashboard; `uv sync --group gui`) |
+| `uv run replicate-ai --gui-demo` | Fake GUI stream (no Modal/LLM) |
 | `uv run replicate-ai ../examples/<pack> --skip-pdf-extract` | Skip host PDF step on reruns |
+| `uv run replicate-ai ../examples/<pack> --pdf-backend legacy` | Legacy pymupdf4llm + Camelot instead of Docling |
 | `uv run replicate-ai ../examples/<pack> --audit-out ./audit.md` | Save audit to a custom path |
 | `uv run pytest -q` | Tests (from `replicate_ai/`) |
 
-Completed runs write `replication_audit.md` to the example folder by default (`audit_export.py`). TUI key `s` re-saves the audit.
+Completed runs write `replication_audit.md` to the example folder by default (`audit_export.py`). TUI key `s` or the GUI **Save audit** button re-saves the audit.
 
 Example data refresh:
 
@@ -93,15 +97,16 @@ uv run --directory replicate_ai python ../examples/<pack>/data_population_script
 
 | Goal | Files |
 |------|--------|
-| CLI flags, TUI routing | `main.py` |
+| CLI flags, TUI routing, default user message | `main.py`, `constants.py` (`resolve_user_message`) |
 | Run orchestration, deliverable polling | `runner/run.py`, `runner/log_poll.py` |
 | Parse coeffs for TUI card | `runner/parse.py`, `runner/display.py` |
 | TUI rendering / scroll / detail pane | `tui/app.py`, `tui/handler.py`, `tui/format.py` |
+| Browser GUI (Starlette + static SPA) | `gui/server.py`, `gui/session.py`, `gui/static/` |
 | TUI events (testable) | `tui/events.py` |
 | Econometrician / auditor instructions | `system_prompts/*.md` |
 | Auditor sub-agent + `get_current_date` tool | `subagents/auditor.py`, `tools/date_tool.py` |
 | LLM providers | `models.py`, `.env.example` |
-| PDF extraction | `tools/pdf_core.py`, `preflight.py` |
+| PDF extraction | `tools/pdf_core.py`, `tools/pdf_docling.py`, `preflight.py` |
 | Modal sandbox + execute | `modal_sandbox.py`, `sandbox_image.py` |
 | Resolve `paper.pdf` / `data.csv` in examples | `example_assets.py`, `workspace.py` |
 | New example pack | `examples/<name>/`, update `examples/README.md` |
@@ -118,7 +123,8 @@ Detail pane: must show `audit_md` even when `coeffs` is `None`. Deliverable poll
 
 - Prefer mocked Modal/agent for `runner/run.py` (`tests/test_runner_run.py`).
 - Keep handler logic in `tui/handler.py` testable without UI (`tests/test_tui_handler.py`).
-- Run `uv run pytest -q` from `replicate_ai/` after changes to runner, TUI, preflight, or parsing.
+- Run `uv run python -m pytest -q` from `replicate_ai/` after changes to runner, TUI, GUI, preflight, or parsing.
+- GUI tests: `tests/test_gui_serialize.py`, `tests/test_gui_server.py` (Starlette TestClient; mock runner where needed).
 - Do not add tests that only assert obvious constants unless they guard real regression behavior.
 
 ## Example packs
@@ -135,10 +141,10 @@ Only `card_krueger` ships a PDF in-repo; other packs are run candidates, not gua
 
 1. Minimal diffs — Match existing style; do not refactor unrelated code.
 2. Prompts are product — Changes to `ECONOMETRICIAN_PROMPT.md` / `AUDITOR.md` affect all runs; edit deliberately and mention in PR/commit notes.
-3. Host vs sandbox — PDF/Camelot stays on host; do not move heavy extraction into Modal without updating `docs/DESIGN.md` and image size.
+3. Host vs sandbox — PDF/Docling stays on host; do not move heavy extraction into Modal without updating `docs/DESIGN.md` and image size. Default PDF backend is Docling (`--pdf-backend legacy` for pymupdf4llm+Camelot).
 4. No secrets — Never commit `.env`, API keys, or tokens. Do not log secrets.
 5. No git config changes — Do not amend commits unless user asked and hooks allow it.
-6. Dependencies — App: `pyproject.toml` `[project]`. Sandbox econometrics: `[dependency-groups.sandbox]` (installed in Modal image via `sandbox_image.py`). Dev-only (e.g. `rdata` for example scripts): `[dependency-groups.dev]`.
+6. Dependencies — App: `pyproject.toml` `[project]`. Sandbox econometrics: `[dependency-groups.sandbox]` (Modal image via `sandbox_image.py`). Browser GUI: `[dependency-groups.gui]` (Starlette, uvicorn). Dev-only (e.g. `rdata`, `httpx`): `[dependency-groups.dev]`.
 7. Circular imports — Shared constants live in `constants.py` (used by `agent.py` and `runner/run.py`).
 
 ## Common pitfalls
@@ -154,10 +160,13 @@ Read before large features:
 
 - `docs/DESIGN.md` — schemas, workflow, non-goals, auditor tolerance (rel. dev. ≤5% → MATCH, etc.).
 - `docs/DESIGN_TUI.md` — phases (Read paper · Specify · Estimate · Audit), headline card, deliverable bullets.
+- `docs/DESIGN_GUI.md` — launcher, uploads (no size cap; client warnings), SSE dashboard, API routes.
+- `docs/test.md` — benchmark matrix (expected vs actual verdicts per example pack); update after live runs.
 - `replicate_ai/README.md` — setup, providers, example table.
 
 ## When unsure
 
 - Match behavior to `docs/DESIGN.md` over comments if they diverge.
-- For UI behavior, check `tui/handler.py` + `tests/test_tui_handler.py`.
+- For TUI behavior, check `tui/handler.py` + `tests/test_tui_handler.py`.
+- For GUI behavior, check `gui/server.py`, `gui/session.py`, and `tests/test_gui_server.py`; view state is shared via `tui/handler.apply_event`.
 - For replication outcomes, the ground truth is the paper’s published table, not `target_spec_reference.json` (reference only).

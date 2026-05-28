@@ -43,11 +43,27 @@ class TestApplyEvent:
         )
         assert "Card & Krueger" in state.running_head
 
+    def test_audit_deliverable_advances_display_during_agent(self):
+        state = TuiViewState()
+        apply_event(state, PhaseChanged(Phase.agent))
+        apply_event(state, DeliverableWritten("target_specification.json"))
+        assert state.phase_display == "Estimate"
+        apply_event(state, DeliverableWritten("replication_audit.md"))
+        assert state.phase_display == "Audit"
+
     def test_audit_ready_without_coefficients(self):
         state = TuiViewState()
         apply_event(state, AuditReady("## Replication audit\n\n**Verdict**: ok"))
         assert state.coeffs is None
+        assert state.phase_display == "Audit"
         assert "Replication audit" in (state.audit_md or "")
+
+    def test_audit_ready_during_agent_after_estimate(self):
+        state = TuiViewState()
+        apply_event(state, PhaseChanged(Phase.agent))
+        apply_event(state, DeliverableWritten("target_specification.json"))
+        apply_event(state, AuditReady("## Audit\n\nDone."))
+        assert state.phase_display == "Audit"
 
     def test_run_finished_banner_without_coefficients(self):
         state = TuiViewState()

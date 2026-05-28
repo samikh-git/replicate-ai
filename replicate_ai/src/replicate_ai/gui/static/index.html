@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReplicateAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="hero">
+        <h1>Replicate a paper</h1>
+        <p>Pick a curated example pack or upload your own PDF and CSV.</p>
+      </div>
+
+      <div id="notice" class="notice" style="display: none"></div>
+
+      <div class="card">
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="packs">Curated packs</button>
+          <button type="button" class="tab" data-tab="files">Upload files</button>
+          <button type="button" class="tab" data-tab="directory">Upload folder</button>
+        </div>
+
+        <div id="panel-packs">
+          <div id="pack-grid" class="pack-grid"></div>
+        </div>
+
+        <div id="panel-files" style="display: none">
+          <div class="dropzone" id="dropzone-files">
+            <p>Drop <strong>paper.pdf</strong> and <strong>data.csv</strong> here, or click to choose</p>
+            <input type="file" id="input-paper" accept=".pdf,application/pdf" />
+            <input type="file" id="input-data" accept=".csv,text/csv" />
+            <p id="files-selected" style="margin-top: 1rem; font-size: 0.85rem"></p>
+          </div>
+        </div>
+
+        <div id="panel-directory" style="display: none">
+          <div class="dropzone" id="dropzone-dir">
+            <p>Drop a folder here, or click to choose a directory</p>
+            <input type="file" id="input-directory" webkitdirectory directory multiple />
+            <p id="dir-selected" style="margin-top: 1rem; font-size: 0.85rem"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Run settings</h2>
+        <div class="form-row">
+          <div>
+            <label for="provider">LLM provider</label>
+            <select id="provider"></select>
+          </div>
+          <button type="button" class="primary" id="btn-start" disabled>Start replication</button>
+        </div>
+      </div>
+    </div>
+    <script src="/launcher.js"></script>
+  </body>
+</html>
